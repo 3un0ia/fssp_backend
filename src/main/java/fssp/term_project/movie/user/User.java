@@ -2,23 +2,20 @@ package fssp.term_project.movie.user;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity @Getter
 @Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User implements UserDetails {
+public class User {
     /*
     * 이름, 이메일(아이디), 비밀번호
     * */
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", updatable = false)
     private Long id;
 
     @Column(name = "name", nullable = false)
@@ -27,23 +24,22 @@ public class User implements UserDetails {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Builder
-    public User(String name, String email, String password, String auth) {
+    public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
     }
 
-    @Override // 권한 반환
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_preferred_genre_ids", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "genre_id", nullable = false)
+    private Set<Integer> preferredGenreIds = new HashSet<>();
 
-    @Override // 사용자 id(고유값) 반환
-    public String getUsername() {
-        return this.email;
+    public void setPreferredGenreIds(Set<Integer> preferredGenreIds) {
+        this.preferredGenreIds = preferredGenreIds;
     }
 }

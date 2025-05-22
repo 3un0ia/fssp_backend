@@ -1,4 +1,4 @@
-package fssp.term_project.movie.user.dto;
+package fssp.term_project.movie.user;
 
 import lombok.Getter;
 import lombok.Setter;

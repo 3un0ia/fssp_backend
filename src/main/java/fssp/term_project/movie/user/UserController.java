@@ -1,38 +1,36 @@
-package fssp.term_project.movie.user.controller;
+package fssp.term_project.movie.user;
 
-import fssp.term_project.movie.user.dto.AddUserRequest;
-import fssp.term_project.movie.user.service.EmailService;
-import fssp.term_project.movie.user.service.UserService;
-import jakarta.mail.MessagingException;
+import fssp.term_project.movie.user.UserDto.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 
-@Controller
+@RestController
+@RequestMapping("/users")
 public class UserController {
     private final UserService userService;
-    private EmailService emailService;
 
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
-    @PostMapping("/login/mailConfirm")
-    public String mailConfirm(@RequestBody String email) throws MessagingException, UnsupportedEncodingException {
-        String authCode = emailService.sendEmail(email);
-        return authCode;
+    @PostMapping("/signup")
+    public ResponseEntity<InfoRes> signup(@Validated @RequestBody SignupReq req) {
+        InfoRes res = userService.signup(req);
+        return ResponseEntity.ok(res);
     }
 
-
-    @PostMapping("/user")
-    public String signup(AddUserRequest request) {
-        userService.save(request);
-        return "redirect:/login";
+    @PostMapping("/login")
+    public ResponseEntity<LoginRes> login(@Validated @RequestBody LoginReq req) {
+        LoginRes res = userService.login(req);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/logout")
