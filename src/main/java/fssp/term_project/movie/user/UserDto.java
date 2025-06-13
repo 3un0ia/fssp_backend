@@ -12,7 +12,7 @@ public class UserDto {
             @Email @NotBlank String email,
             @NotBlank String password,
             @NotBlank String name,
-            Set<@NotBlank Integer> preferredGenreIds
+            Set<Integer> preferredGenreIds
     ) {}
 
     public record LoginReq (

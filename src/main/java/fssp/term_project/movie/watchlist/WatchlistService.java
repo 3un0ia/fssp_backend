@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WatchlistService {
@@ -29,7 +30,7 @@ public class WatchlistService {
      * ③ 각 tmdbId로 TMDB 요약 정보 일괄 조회
      */
     @Transactional(readOnly = true)
-    public List<SummaryRes> listFavorites(String userEmail) {
+    public List<DetailRes> listFavorites(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + userEmail));
 
@@ -40,17 +41,22 @@ public class WatchlistService {
         if (tmdbIds.isEmpty()) {
             return List.of();
         }
-        return tmdbMovieClient.fetchSummaries(tmdbIds);
+        return tmdbMovieClient.fetchDetails(tmdbIds);
     }
 
 
     @Transactional
     public void addFavorite(String userEmail, Long tmdbId) {
+        System.out.println(">> call addFavorite: find user email");
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + userEmail));
 
-        boolean exists = watchlistRepository.existsByUserAndTmdbId(user, tmdbId);
-        if (!exists) {
+        System.out.println(">> user found: findByTmdbId in repo");
+//        boolean exists = watchlistRepository.existsByUserAndTmdbId(user, tmdbId);
+        Optional<Watchlist> byTmdbId = watchlistRepository.findByTmdbId(tmdbId);
+        System.out.println("byTmdbId = " + byTmdbId.toString());
+        if (byTmdbId.isEmpty()) {
+//        if (!exists) {
             Watchlist item = new Watchlist();
             item.setUser(user);
             item.setTmdbId(tmdbId);
@@ -60,9 +66,11 @@ public class WatchlistService {
 
     @Transactional
     public void removeFavorite(String userEmail, Long tmdbId) {
+        System.out.println(">>> call removeFavorite: find user email");
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + userEmail));
 
+        System.out.println(">> user found: find in repo & delete");
         watchlistRepository.findByUserAndTmdbId(user, tmdbId)
                 .ifPresent(watchlistRepository::delete);
     }

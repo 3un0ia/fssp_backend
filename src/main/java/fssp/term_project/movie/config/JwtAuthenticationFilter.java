@@ -1,5 +1,6 @@
 package fssp.term_project.movie.config;
 
+import fssp.term_project.movie.user.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,16 +9,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
-                                   UserDetailsService userDetailsService) {
+                                   CustomUserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
     }
@@ -25,21 +27,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws IOException, ServletException {
-        // 1) 요청 헤더에서 토큰 추출
         String token = resolveToken(request);
-        // 2) 토큰 유효성 검사 & 인증 처리
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String username = jwtTokenProvider.getSubject(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
+        System.out.println("token is resolved successfully : " + token);
+        try {
+            if (token != null && jwtTokenProvider.validateToken(token)) {
+                String username = jwtTokenProvider.getSubject(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (userDetails != null) {
+                    UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             userDetails.getAuthorities()
-                    );
-            SecurityContextHolder.getContext().setAuthentication(auth); // 인증 컨텍스트에 등록
+                        );
+                    // Set details for the authentication token
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    System.out.println("토큰 검증 완료");
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
+        } catch (Exception ex) {
+            // Log and continue filter chain to reach controller or further filters
+            System.err.println("Failed to authenticate user from JWT: " + ex.getMessage());
+            ex.printStackTrace();
         }
-        filterChain.doFilter(request, response); // 다음 필터 실행
+        // Always continue the filter chain
+        filterChain.doFilter(request, response);
     }
     // Authorization 헤더에서 "Bearer {token}" 형태의 토큰을 파싱해서 반환
     private String resolveToken(HttpServletRequest request) {

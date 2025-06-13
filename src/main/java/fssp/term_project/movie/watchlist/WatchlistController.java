@@ -20,7 +20,7 @@ public class WatchlistController {
 
     // 사용자 즐겨찾기(워치리스트) 목록 조회
     @GetMapping
-    public ResponseEntity<List<MovieDto.SummaryRes>> listFavorites(@AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<List<MovieDto.DetailRes>> listFavorites(@AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(watchlistService.listFavorites(user.getUsername()));
     }
 
@@ -30,6 +30,7 @@ public class WatchlistController {
             @PathVariable Long tmdbId,
             @AuthenticationPrincipal UserDetails user
     ) {
+        System.out.println("user = " + user.toString());
         watchlistService.addFavorite(user.getUsername(), tmdbId);
         return ResponseEntity.ok().build();
     }

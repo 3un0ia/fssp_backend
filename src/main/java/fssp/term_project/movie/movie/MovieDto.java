@@ -10,7 +10,8 @@ public class MovieDto {
             Long id,
             String title,
             String posterUrl,
-            Double rating
+            Double rating,
+            String year
     ) {}
 
     /** 상세 정보 */
@@ -18,10 +19,13 @@ public class MovieDto {
             Long id,
             String title,
             String overview,
-            LocalDate releaseDate,
+            String posterUrl,
+            Double rating,
+            String year,
             Set<String> genres,
             Set<String> cast, //actors
-            Set<String> crew, //directors
-            Double rating
+            Set<String> director, //directors
+            String backdropUrl,
+            int runtime
     ) {}
 }
