@@ -11,8 +11,8 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     /*
-    * 이름, 이메일(아이디), 비밀번호
-    * */
+     * 이름, 이메일(아이디), 비밀번호
+     * */
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

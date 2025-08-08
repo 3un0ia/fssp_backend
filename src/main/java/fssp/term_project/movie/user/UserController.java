@@ -30,12 +30,14 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<LoginRes> login(@Validated @RequestBody LoginReq req) {
         LoginRes res = userService.login(req);
+        System.out.println("res: \n" + res.toString());
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/logout")
-    public String logout(HttpServletRequest request, HttpServletResponse response) {
-        new SecurityContextLogoutHandler().logout(request, response, SecurityContextHolder.getContext().getAuthentication());
-        return "redirect:/login";
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        new SecurityContextLogoutHandler()
+                .logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok().build();
     }
 }

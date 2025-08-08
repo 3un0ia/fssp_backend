@@ -43,8 +43,4 @@ public class UserService {
 
         return new LoginRes(token, user.getId(), user.getEmail(), user.getName(), user.getPreferredGenreIds());
     }
-
-    private void logout() {
-
-    }
 }
