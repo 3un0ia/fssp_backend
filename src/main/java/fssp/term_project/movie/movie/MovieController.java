@@ -37,23 +37,27 @@ public class MovieController {
     }
 
     // 메인화면 - 인기 영화 리스트
-    @GetMapping
+    @GetMapping("/popular")
     public ResponseEntity<List<SummaryRes>> listPopular(@RequestParam(defaultValue = "5") int limit) {
+        System.out.println("--- 인기 영화 리스트 요청 ---");
         return ResponseEntity.ok(movieService.listPopular(limit));
     }
     // 추천 (선택 선호 장르 기반 종합 추천)
     @GetMapping("/recommend/combined")
     public ResponseEntity<List<SummaryRes>> recommendCombined(@AuthenticationPrincipal UserDetails user,
                                                               @RequestParam(defaultValue="10") int limit) {
-               User u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-               return ResponseEntity.ok( movieService.recommendByUserPreferences(u.getPreferredGenreIds(), limit));
+        System.out.println("--- 종합 추천 영화 리스트 요청 ---");
+        User u = userRepository.findByEmail(user.getUsername()).orElseThrow();
+        return ResponseEntity.ok( movieService.recommendByUserPreferences(u.getPreferredGenreIds(), limit));
     }
     // 메인화면 - 장르별 추천 영화 리스트
     @GetMapping("/recommend/genres")
-    public ResponseEntity<Map<String,List<SummaryRes>>> recommendByGenres( @AuthenticationPrincipal UserDetails user,
-                                                                           @RequestParam(defaultValue = "5")int limit) {
-        User u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-        return ResponseEntity.ok(movieService.groupPopularByGenre(u.getPreferredGenreIds(), limit));
+    public ResponseEntity<List<SummaryRes>> recommendByGenres(@RequestParam Integer genreId,
+                                                              @RequestParam(defaultValue = "10") int limit) {
+        System.out.println("--- 장르별 추천 영화 ---");
+        System.out.println("추천 장르 ID : "+ genreId.toString());
+        List<SummaryRes> response = movieService.groupPopularByGenre(genreId, limit);
+        return ResponseEntity.ok(response);
     }
 
     // 평점 저장

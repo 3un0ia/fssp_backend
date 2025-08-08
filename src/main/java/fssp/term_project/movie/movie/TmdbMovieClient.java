@@ -1,6 +1,7 @@
 package fssp.term_project.movie.movie;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,7 +17,7 @@ public class TmdbMovieClient {
     private final WebClient webClient;
     private final String apiKey;
 
-    public TmdbMovieClient(WebClient webClient,
+    public TmdbMovieClient(@Qualifier("tmdbWebClient") WebClient webClient,
                            @Value("${tmdb.api-key}") String apiKey) {
         this.webClient = webClient;
         this.apiKey = apiKey;
@@ -143,24 +144,29 @@ public class TmdbMovieClient {
                 .bodyToMono(JsonNode.class)
                 .block();
 
+        // 포스터 URL
+        String posterUrl = m.hasNonNull("poster_path")
+                ? "https://image.tmdb.org/t//p/w500" + m.get("poster_path").asText()
+                : null;
+        // 백드롭 URL
+        String backdropUrl = m.hasNonNull("backdrop_path")
+                ? "https://image.tmdb.org/t/p/w500" + m.get("backdrop_path").asText()
+                : null;
+
+        // 평점
+        double rating = m.hasNonNull("vote_average") ? m.get("vote_average").asDouble() : 0.0;
+
+        // 연도(year) : release_date에서 앞 4자리 (없으면 빈 문자열)
+        String releaseDateStr = m.hasNonNull("release_date") ? m.get("release_date").asText() : "";
+        String year = "";
+        if (!releaseDateStr.isEmpty() && releaseDateStr.length() >= 4) {
+            year = releaseDateStr.substring(0, 4);
+        }
+
         // 장르 이름 리스트
         Set<String> genres = StreamSupport.stream(m.get("genres").spliterator(), false)
                 .map(n -> n.get("name").asText())
                 .collect(Collectors.toSet());
-
-        // 기본 상세 정보 수집
-        DetailRes base = new DetailRes(
-                m.get("id").asLong(),
-                m.get("title").asText(),
-                m.hasNonNull("overview") ? m.get("overview").asText() : "",
-                m.hasNonNull("release_date") && !m.get("release_date").asText().isEmpty()
-                        ? LocalDate.parse(m.get("release_date").asText())
-                        : null,
-                genres,
-                Collections.emptySet(),
-                Collections.emptySet(),
-                m.hasNonNull("vote_average") ? m.get("vote_average").asDouble() : 0.0
-        );
 
         // 출연진 & 제작진 조회
         JsonNode credits = webClient.get()
@@ -172,21 +178,34 @@ public class TmdbMovieClient {
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();
+        // 러닝타임 (runtime) 분 단위로 파싱 (없으면 0)
+        int runtime = m.hasNonNull("runtime") ? m.get("runtime").asInt() : 0;
 
+        // 상위 6명의 출연진 이름 모음
         Set<String> cast = StreamSupport.stream(credits.get("cast").spliterator(), false)
                 .map(n -> n.get("name").asText())
-                .limit(10)  // 상위 10명만
+                .limit(6)
                 .collect(Collectors.toSet());
 
-        Set<String> crew = StreamSupport.stream(credits.get("crew").spliterator(), false)
+        // 감독(Director) 이름 모음
+        Set<String> director = StreamSupport.stream(credits.get("crew").spliterator(), false)
                 .filter(n -> "Director".equals(n.get("job").asText()))
                 .map(n -> n.get("name").asText())
                 .collect(Collectors.toSet());
 
+        // DetailRes 생성 (year, posterUrl, rating, genres, cast, director, backdropUrl 포함)
         return new DetailRes(
-                base.id(), base.title(), base.overview(),
-                base.releaseDate(), base.genres(),
-                cast, crew, base.rating()
+                m.get("id").asLong(),
+                m.get("title").asText(),
+                m.hasNonNull("overview") ? m.get("overview").asText() : "",
+                posterUrl,
+                rating,
+                year,
+                genres,
+                cast,
+                director,
+                backdropUrl,
+                runtime
         );
     }
 
@@ -213,22 +232,37 @@ public class TmdbMovieClient {
                 .map(this::fetchSummary)
                 .collect(Collectors.toList());
     }
+    public List<DetailRes> fetchDetails(List<Long> tmdbIds) {
+        return tmdbIds.stream()
+                .map(this::fetchDetail)
+                .collect(Collectors.toList());
+    }
 
     /** JsonNode → SummaryRes 변환 헬퍼 */
     private SummaryRes toSummary(JsonNode item) {
+        // 포스터 URL
         String poster = item.hasNonNull("poster_path")
                 ? "https://image.tmdb.org/t/p/w500" + item.get("poster_path").asText()
                 : null;
 
+        // 평점
         double rating = item.hasNonNull("vote_average")
                 ? item.get("vote_average").asDouble()
                 : 0.0;
+
+        // 연도(year)
+        String releaseDate = item.hasNonNull("release_date") ? item.get("release_date").asText() : "";
+        String year = "";
+        if (!releaseDate.isEmpty() && releaseDate.length() >= 4) {
+            year = releaseDate.substring(0, 4);
+        }
 
         return new SummaryRes(
                 item.get("id").asLong(),
                 item.get("title").asText(),
                 poster,
-                rating
+                rating,
+                year
         );
     }
 }

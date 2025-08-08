@@ -26,15 +26,15 @@ public class MovieService {
         return tmdbClient.fetchPopular(limit);
     }
 
-//    /** 2. 일간 트렌딩 영화 (Trending by day) */
-//    public List<SummaryRes> listTrendingDay(int limit) {
-//        return tmdbClient.fetchTrending("day", limit);
-//    }
-//
-//    /** 3. 주간 트렌딩 영화 (Trending by week) */
-//    public List<SummaryRes> listTrendingWeek(int limit) {
-//        return tmdbClient.fetchTrending("week", limit);
-//    }
+    /** 2. 일간 트렌딩 영화 (Trending by day) */
+    public List<SummaryRes> listTrendingDay(int limit) {
+        return tmdbClient.fetchTrending("day", limit);
+    }
+
+    /** 3. 주간 트렌딩 영화 (Trending by week) */
+    public List<SummaryRes> listTrendingWeek(int limit) {
+        return tmdbClient.fetchTrending("week", limit);
+    }
 
     /**
      * 4. 키워드 검색
@@ -63,19 +63,10 @@ public class MovieService {
     /**
      * 5-2. 장르별 인기 영화 추천
      */
-    public Map<String, List<SummaryRes>> groupPopularByGenre(Set<Integer> preferredGenreIds, int limit) {
+    public List<SummaryRes> groupPopularByGenre(Integer genreId, int limit) {
 
-        Map<Integer, String> idToName = tmdbClient.fetchAllGenres();
-        Map<String, List<SummaryRes>> result = new LinkedHashMap<>();
-
-        for (Integer genreId : preferredGenreIds) {
-            String genreName = idToName.get(genreId);
-            if (genreName == null) continue;
-            // Discover에 sort_by=popularity.desc 로 default 되어 있으니 인기 영화
-            List<SummaryRes> list = tmdbClient.discoverByGenres(List.of(genreId), limit);
-            result.put(genreName, list);
-        }
-        return result;
+        // Discover에 sort_by=popularity.desc 로 default 되어 있으니 인기 영화
+        return tmdbClient.discoverByGenres(List.of(genreId), limit);
     }
 
     /**
