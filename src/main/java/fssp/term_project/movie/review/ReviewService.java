@@ -28,10 +28,10 @@ public class ReviewService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + userEmail));
 
         Review review = new Review().builder()
-                        .tmdbId(tmdbId).user(user)
-                        .rating(req.rating())
-                        .content(req.content())
-                        .createdAt(LocalDateTime.now()).build();
+                .tmdbId(tmdbId).user(user)
+                .rating(req.rating())
+                .content(req.content())
+                .createdAt(LocalDateTime.now()).build();
         return reviewRepo.save(review);
     }
 
@@ -43,4 +43,3 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 }
-
