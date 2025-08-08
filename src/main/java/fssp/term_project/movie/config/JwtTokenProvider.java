@@ -7,6 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 
 import java.security.Key;
 import java.util.Date;
@@ -22,12 +23,12 @@ public class JwtTokenProvider {
 
     private Key key;
 
+    @PostConstruct
     public void init() {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
     public String createToken(String subject) {
-        init();
         Claims claims = Jwts.claims().setSubject(subject);
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validityInMilliseconds);
@@ -51,13 +52,18 @@ public class JwtTokenProvider {
     // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
+            // Build the parser with the signing key
             Jwts.parserBuilder()
                     .setSigningKey(key)
-                    .build()
+                    .build()  // ensure build() is called here
                     .parseClaimsJws(token);
+
+            // Log success for debugging
+            System.out.println("validateToken: token is valid");
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            e.getMessage();
+            // Log the exception message for debugging
+            System.err.println("validateToken: token invalid - " + e.getMessage());
             return false;
         }
     }

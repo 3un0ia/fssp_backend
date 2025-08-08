@@ -1,8 +1,12 @@
 package fssp.term_project.movie.config;
 
+import fssp.term_project.movie.user.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,31 +27,44 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final CustomUserDetailsService customUserDetailsService;
+
+    public SecurityConfig (
+            CustomUserDetailsService customUserDetailsService
+    ) {
+        this.customUserDetailsService = customUserDetailsService;
+    }
+
+    @Bean
+    public AuthenticationManager authManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
+        AuthenticationManagerBuilder authBuilder =
+                http.getSharedObject(AuthenticationManagerBuilder.class);
+        authBuilder.userDetailsService(customUserDetailsService)
+                .passwordEncoder(passwordEncoder);
+        return authBuilder.build();
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtTokenProvider tokenProvider,
-                                           UserDetailsService userDetailsService) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokenProvider, userDetailsService);
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults())
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션을 쓰지 않도록 설정 (JWT 방식)
-                .authorizeHttpRequests(auth -> auth // 인증이 필요 없는 URL 설정
-                        .requestMatchers(HttpMethod.POST, "/users/signup", "/users/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
-                        .anyRequest().authenticated() // 그 외 요청은 모두 인증 필요
-                )
-                // JWT 인증 필터 추가 (UsernamePasswordAuthenticationFilter 앞에 삽입)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                                           PasswordEncoder passwordEncoder) throws Exception {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokenProvider, this.customUserDetailsService);
+        http.csrf(csrf -> csrf.disable());
+        http.cors(withDefaults());
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.POST, "/users/signup", "/users/login", "/users/logout").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/movies/**").permitAll()
+//                        .requestMatchers("/watchlist/**").authenticated()
+                        .anyRequest().authenticated())
+                .logout(logout -> logout
+                        .logoutUrl("/users/logout")
+                        .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_OK))
+                );
         return http.build();
     }
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider jwtProvider,
-                                                           UserDetailsService userDetailsService) {
-        return new JwtAuthenticationFilter(jwtProvider, userDetailsService);
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
