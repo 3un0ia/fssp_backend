@@ -33,10 +33,10 @@ public class Review {
 
     @Builder
     public Review(Long tmdbId, User user, Double rating, String content, LocalDateTime createdAt){
-        this.tmdbId = tmdbId;
-        this.user = user;
-        this.rating = rating;
-        this.content = content;
-        this.createdAt = createdAt;
+         this.tmdbId = tmdbId;
+         this.user = user;
+         this.rating = rating;
+         this.content = content;
+         this.createdAt = createdAt;
     }
 }

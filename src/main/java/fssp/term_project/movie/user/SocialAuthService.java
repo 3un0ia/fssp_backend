@@ -42,7 +42,7 @@ public class SocialAuthService {
                     User user = socialAccount.getUser();
                     String jwt = jwtProvider.createToken(user.getEmail());
                     return new SocialLoginRes(EXISTING_USER,
-                            jwt, user.getId(), user.getEmail(), user.getName());
+                                            jwt, user.getId(), user.getEmail(), user.getName());
                 })
                 .orElseGet(()-> {
                     User user = User.builder()

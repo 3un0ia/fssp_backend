@@ -54,9 +54,9 @@ public class JwtTokenProvider {
         try {
             // Build the parser with the signing key
             Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()  // ensure build() is called here
-                    .parseClaimsJws(token);
+                .setSigningKey(key)
+                .build()  // ensure build() is called here
+                .parseClaimsJws(token);
 
             // Log success for debugging
             System.out.println("validateToken: token is valid");

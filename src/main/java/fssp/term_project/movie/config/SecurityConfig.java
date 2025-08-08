@@ -40,7 +40,7 @@ public class SecurityConfig {
         AuthenticationManagerBuilder authBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
         authBuilder.userDetailsService(customUserDetailsService)
-                .passwordEncoder(passwordEncoder);
+                   .passwordEncoder(passwordEncoder);
         return authBuilder.build();
     }
 
